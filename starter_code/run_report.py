@@ -9,6 +9,7 @@ Usage (from the starter_code folder):
 
 You may edit this file. Add your breakpoint() calls to run_stats.py instead.
 """
+import logging
 import sys
 
 import run_stats
@@ -67,6 +68,20 @@ TICKETS = {1: ticket_1, 2: ticket_2, 3: ticket_3, 4: ticket_4, 5: ticket_5, 6: t
 def main(argv):
     # ---- Part B: configure logging HERE (the entry point), not inside run_stats.py ----
     # TODO (Part B): set up console (INFO) + file (DEBUG, run_report.log) handlers.
+    logger = logging.getLogger()
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+
+        file_handler = logging.FileHandler("run_report.log", encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     if len(argv) > 1:
         number = int(argv[1])

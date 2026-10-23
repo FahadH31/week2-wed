@@ -13,8 +13,10 @@ Data shapes used here:
 Written lessons that help: debugging-techniques.md, mutability-and-memory.md,
 scope-and-namespaces.md, built-in-python-functions.md.
 """
+import logging
 
 run_counter = 0
+logger = logging.getLogger(__name__)
 
 
 def next_run_id():
@@ -25,7 +27,9 @@ def next_run_id():
     """
     global run_counter
     run_counter += 1
-    return f"RUN-{run_counter:04d}"
+    result = f"RUN-{run_counter:04d}"
+    logger.debug("next_run_id result: %s", result)
+    return result
 
 
 def median(values):
@@ -42,10 +46,13 @@ def median(values):
 
     # for list of odd length
     if (len(ordered) % 2 != 0):
-        return ordered[len(ordered) // 2]
+        result = ordered[len(ordered) // 2]
     else:
         # return avg of middle 2 elements
-        return (ordered[(len(ordered) // 2) - 1] + ordered[len(ordered) // 2]) / 2
+        result = (ordered[(len(ordered) // 2) - 1] + ordered[len(ordered) // 2]) / 2
+
+    logger.debug("median of %d values = %s", len(ordered), result)
+    return result
 
 
 def slowest(durations, n):
@@ -56,10 +63,13 @@ def slowest(durations, n):
     The caller's list must not be changed.
     """
     if n <= 0:
-        return []
+        result = []
+    else:
+        ordered = sorted(durations, reverse=True)
+        result = ordered[:n]
 
-    ordered = sorted(durations, reverse=True)
-    return ordered[:n]
+    logger.debug("slowest %d of %d durations = %s", n, len(durations), result)
+    return result
 
 
 def group_by_suite(results):
@@ -72,7 +82,11 @@ def group_by_suite(results):
     """
     grouped = {}
     for result in results:
-        suite = result.get("suite", "unknown")
+        suite = result.get("suite")
+        if not suite:
+            logger.warning("test %s has no suite, defaulting to 'unknown'", result.get("test", "unknown"))
+            suite = "unknown"
+
         status = result["status"]
         if suite not in grouped:
             grouped[suite] = {}
@@ -91,6 +105,7 @@ def note_flaky(test_name, flaky=None):
     if flaky is None:
         flaky = []
     flaky.append(test_name)
+    logger.info("flagged flaky test %s (total: %d)", test_name, len(flaky))
     return flaky
 
 
@@ -114,4 +129,5 @@ def summarise_run(results, durations):
         "slowest_ms": slowest(durations, 3),
         "latest_ms": durations[-1] if durations else None,
     }
+    logger.info("summarised run %s: %d results across %d suites", summary["run_id"], summary["total"], len(summary["by_suite"]))
     return summary
