@@ -23,6 +23,7 @@ def next_run_id():
     The counter lives at module level so ids keep increasing for as long as
     the program runs.
     """
+    global run_counter
     run_counter += 1
     return f"RUN-{run_counter:04d}"
 
@@ -34,8 +35,17 @@ def median(values):
     Even count: the mean of the two middle values of the sorted numbers.
     Empty list: raise ValueError("median() needs at least one value").
     """
+    if not values:
+        raise ValueError("median() needs at least one value")
+    
     ordered = sorted(values)
-    return ordered[len(ordered) // 2]
+
+    # for list of odd length
+    if (len(ordered) % 2 != 0):
+        return ordered[len(ordered) // 2]
+    else:
+        # return avg of middle 2 elements
+        return (ordered[(len(ordered) // 2) - 1] + ordered[len(ordered) // 2]) / 2
 
 
 def slowest(durations, n):
@@ -45,8 +55,11 @@ def slowest(durations, n):
     n == 0 returns an empty list.
     The caller's list must not be changed.
     """
-    durations.sort(reverse=True)
-    return durations[:n - 1]
+    if n <= 0:
+        return []
+
+    ordered = sorted(durations, reverse=True)
+    return ordered[:n]
 
 
 def group_by_suite(results):
@@ -59,16 +72,24 @@ def group_by_suite(results):
     """
     grouped = {}
     for result in results:
-        grouped[result["suite"]][result["status"]] += 1
+        suite = result.get("suite", "unknown")
+        status = result["status"]
+        if suite not in grouped:
+            grouped[suite] = {}
+        if status not in grouped[suite]:
+            grouped[suite][status] = 0
+        grouped[suite][status] += 1
     return grouped
 
 
-def note_flaky(test_name, flaky=[]):
+def note_flaky(test_name, flaky=None):
     """Add test_name to a list of flaky tests and return that list.
 
     If the caller passes its own list, add to that list.
     If the caller passes nothing, start a NEW empty list for this call.
     """
+    if flaky is None:
+        flaky = []
     flaky.append(test_name)
     return flaky
 
@@ -89,8 +110,8 @@ def summarise_run(results, durations):
         "run_id": next_run_id(),
         "total": len(results),
         "by_suite": group_by_suite(results),
-        "median_ms": median(durations),
+        "median_ms": median(durations) if durations else None,
         "slowest_ms": slowest(durations, 3),
-        "latest_ms": durations[-1],
+        "latest_ms": durations[-1] if durations else None,
     }
     return summary
